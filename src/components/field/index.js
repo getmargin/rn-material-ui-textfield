@@ -10,15 +10,17 @@ import Counter from '../counter'
 
 import styles from './styles'
 
+import TextInputMask from 'react-native-text-input-mask'
+
 function startAnimation(animation, options, callback) {
   Animated.timing(animation, options).start(callback)
 }
 
 function labelStateFromProps(props, state) {
   let { placeholder, defaultValue } = props
-  let { text, receivedFocus } = state
+  let { text, receivedFocus, extractedText } = state
 
-  return !!(placeholder || text || (!receivedFocus && defaultValue))
+  return !!(placeholder || text || extractedText || (!receivedFocus && defaultValue))
 }
 
 function errorStateFromProps(props, state) {
@@ -53,6 +55,8 @@ export default class TextField extends PureComponent {
     disabledLineType: 'dotted',
 
     disabled: false,
+
+    mask: null,
   }
 
   static propTypes = {
@@ -168,6 +172,7 @@ export default class TextField extends PureComponent {
 
     this.state = {
       text,
+      extractedText: null,
       error,
 
       focusAnimation: new Animated.Value(focusState),
@@ -262,7 +267,7 @@ export default class TextField extends PureComponent {
 
   focus() {
     let { disabled, editable } = this.props
-    let { current: input } = this.inputRef
+    const input = this.inputRef.current?.input;
 
     if (!disabled && editable) {
       input.focus()
@@ -270,18 +275,18 @@ export default class TextField extends PureComponent {
   }
 
   blur() {
-    let { current: input } = this.inputRef
+    const input = this.inputRef.current?.input;
 
     input.blur()
   }
 
   clear() {
-    let { current: input } = this.inputRef
+    const input = this.inputRef.current?.input;
 
     input.clear()
 
     /* onChangeText is not triggered by .clear() */
-    this.onChangeText('')
+    this.onChangeText('', '')
   }
 
   value() {
@@ -366,6 +371,12 @@ export default class TextField extends PureComponent {
 
     this.focused = false
 
+    if (this.props.mask) {
+      if (this.state.extractedText === null ||  this.state.extractedText.length == 0) {
+        this.clear();
+      }
+    }
+
     this.startFocusAnimation()
     this.startLabelAnimation()
   }
@@ -378,18 +389,24 @@ export default class TextField extends PureComponent {
     }
   }
 
-  onChangeText(text) {
+  onChangeText(text, extracted) {
     let { onChangeText, formatText } = this.props
+
+    let hasMask = this.props.mask !== null;
 
     if (typeof formatText === 'function') {
       text = formatText(text)
     }
 
     this.setState({ text })
+    if (hasMask) {
+      this.setState ({ extractedText: extracted });
+    }
 
     if (typeof onChangeText === 'function') {
-      onChangeText(text)
+      onChangeText(hasMask ? extracted : text);
     }
+
   }
 
   onContentSizeChange(event) {
@@ -449,6 +466,10 @@ export default class TextField extends PureComponent {
       if (key in this.props) {
         store[key] = this.props[key]
       }
+    }
+
+    if (this.props.mask) {
+      store.mask = this.props.mask;
     }
 
     return store
@@ -583,7 +604,7 @@ export default class TextField extends PureComponent {
     let inputStyle = this.inputStyle()
 
     return (
-      <TextInput
+      <TextInputMask
         selectionColor={tintColor}
         {...props}
         style={[styles.input, inputStyle, inputStyleOverrides]}
