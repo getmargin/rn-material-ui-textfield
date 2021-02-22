@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "prop-types": "^15.5.9"
+    "react-native-text-input-mask": "^2.0.0"
   },
   "peerDependencies": {
     "react": ">=16.3.0",
