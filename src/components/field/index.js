@@ -140,7 +140,7 @@ export default class TextField extends PureComponent {
       newState.error = error
     }
 
-    if (value !== state.text) {
+    if (value && value !== state.text) {
       newState.text = value
     }
 
@@ -399,6 +399,7 @@ export default class TextField extends PureComponent {
     }
 
     this.setState({ text })
+
     if (hasMask) {
       this.setState ({ extractedText: extracted });
     }
