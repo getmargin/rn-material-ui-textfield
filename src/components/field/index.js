@@ -243,8 +243,23 @@ export default class TextField extends PureComponent {
     startAnimation(labelAnimation, options)
   }
 
+  /*
+     If the input type is TextInputMasked,
+     the input ref is buried an extra layer deep.
+
+     Inception.
+  */
+  correctInputRef() {
+    let { current: input } = this.inputRef;
+    if (input.current) {
+      return input.current.input;
+    } else {
+      return input;
+    }
+  }
+
   setNativeProps(props) {
-    let { current: input } = this.inputRef
+    let input = this.correctInputRef();
 
     input.setNativeProps(props)
   }
@@ -267,7 +282,7 @@ export default class TextField extends PureComponent {
 
   focus() {
     let { disabled, editable } = this.props
-    const input = this.inputRef.current?.input;
+    let input = this.correctInputRef();
 
     if (!disabled && editable) {
       input.focus()
@@ -275,13 +290,13 @@ export default class TextField extends PureComponent {
   }
 
   blur() {
-    const input = this.inputRef.current?.input;
+    let input = this.correctInputRef();
 
     input.blur()
   }
 
   clear() {
-    const input = this.inputRef.current?.input;
+    let input = this.correctInputRef();
 
     input.clear()
 
@@ -307,7 +322,7 @@ export default class TextField extends PureComponent {
   }
 
   isFocused() {
-    let { current: input } = this.inputRef
+    let input = this.correctInputRef();
 
     return input.isFocused()
   }
@@ -399,6 +414,7 @@ export default class TextField extends PureComponent {
     }
 
     this.setState({ text })
+
     if (hasMask) {
       this.setState ({ extractedText: extracted });
     }
@@ -603,8 +619,23 @@ export default class TextField extends PureComponent {
     let props = this.inputProps()
     let inputStyle = this.inputStyle()
 
+    let hasMask = this.props.mask !== null;
+
+    /* Dear Reader:
+      If you're here today, it's probably because you're trying to use
+      the value and mask props at the same time.
+
+      I regret to inform you that no, you can't.
+      Masked input fields need to be uncontrolled so that you get the sweet, responsive,
+      native-y input behavior.
+
+      You may, however, use defaultValue instead.*/
+
+    let value = hasMask ? undefined : this.value();
+    let Input = hasMask ? TextInputMask : TextInput;
+
     return (
-      <TextInputMask
+      <Input
         selectionColor={tintColor}
         {...props}
         style={[styles.input, inputStyle, inputStyleOverrides]}
@@ -614,7 +645,7 @@ export default class TextField extends PureComponent {
         onContentSizeChange={this.onContentSizeChange}
         onFocus={this.onFocus}
         onBlur={this.onBlur}
-        value={this.value()}
+        value={value}
         ref={this.inputRef}
       />
     )
