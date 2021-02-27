@@ -57,6 +57,7 @@ export default class TextField extends PureComponent {
     disabled: false,
 
     mask: null,
+    focus: false,
   }
 
   static propTypes = {
@@ -205,6 +206,11 @@ export default class TextField extends PureComponent {
     let errorState = errorStateFromProps(this.props)
     let prevErrorState = errorStateFromProps(prevProps)
 
+    let { focus } = this.props;
+    if (focus) {
+      this.focus();
+    }
+
     if (errorState ^ prevErrorState) {
       this.startFocusAnimation()
     }
@@ -250,11 +256,12 @@ export default class TextField extends PureComponent {
      Inception.
   */
   correctInputRef() {
-    let { current: input } = this.inputRef;
-    if (input.current) {
-      return input.current.input;
+    if (this.props.mask !== null) {
+      //It's backed by a TextInputMasked
+      return this.inputRef.current.input;
     } else {
-      return input;
+      //It's backed by a TextInput
+      return this.inputRef.current;
     }
   }
 
@@ -297,7 +304,6 @@ export default class TextField extends PureComponent {
 
   clear() {
     let input = this.correctInputRef();
-
     input.clear()
 
     /* onChangeText is not triggered by .clear() */
